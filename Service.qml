@@ -31,6 +31,7 @@ Item {
     property bool refreshQueued: false
     property string markingNotificationId: ""
     property bool markingAllNotifications: false
+    property var markingAllNotificationIds: []
     property string notificationActionStatus: ""
     property string _markStdout: ""
     property string _markStderr: ""
@@ -169,6 +170,34 @@ Item {
         }
         notifications = [item].concat(notifications);
         notificationsRevision++;
+    }
+
+    function hideAllNotifications() {
+        var ids = [];
+        var hidden = copyMap(hiddenNotifications);
+        var remaining = [];
+        for (var i = 0; i < notifications.length; i++) {
+            var item = notifications[i];
+            var id = String(item.id || "");
+            if (id !== "") {
+                ids.push(id);
+                hidden[id] = item;
+            } else {
+                remaining.push(item);
+            }
+        }
+        if (ids.length > 0) {
+            hiddenNotifications = hidden;
+            notifications = remaining;
+            notificationsRevision++;
+        }
+        return ids;
+    }
+
+    function restoreHiddenNotifications(ids) {
+        var values = Array.isArray(ids) ? ids : [];
+        for (var i = values.length - 1; i >= 0; i--)
+            restoreHiddenNotification(values[i]);
     }
 
     function visibleNotifications(rows) {
@@ -341,6 +370,7 @@ Item {
 
         actionStatusTimer.stop();
         markingAllNotifications = true;
+        markingAllNotificationIds = hideAllNotifications();
         notificationActionStatus = "Marking all notifications read…";
         _markStdout = "";
         _markStderr = "";
@@ -427,11 +457,14 @@ Item {
             } else {
                 var fallback = all ? "Could not mark all notifications read." : "Could not mark notification read.";
                 root.notificationActionStatus = response && response.message ? String(response.message) : String(markErrors.text || root._markStderr || fallback).trim();
-                if (!all && markedId !== "")
+                if (all)
+                    root.restoreHiddenNotifications(root.markingAllNotificationIds);
+                else if (markedId !== "")
                     root.restoreHiddenNotification(markedId);
             }
             root.markingNotificationId = "";
             root.markingAllNotifications = false;
+            root.markingAllNotificationIds = [];
             actionStatusTimer.restart();
             if (root.startQueuedMark())
                 return ;

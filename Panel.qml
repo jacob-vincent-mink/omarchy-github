@@ -21,7 +21,7 @@ Panel {
   property string sortMode: "updated"
   property bool cursorActive: false
   property int cursorIndex: 0
-  property bool notificationsExpanded: false
+  property int notificationsPage: 0
   property bool reviewsExpanded: false
   property bool myPullsExpanded: false
   property bool issuesExpanded: false
@@ -70,12 +70,23 @@ Panel {
     return rows.slice(0, expanded ? activityExpandedCount : activityPreviewCount)
   }
 
+  function notificationPageCount() {
+    return Math.max(1, Math.ceil(github.notifications.length / activityPreviewCount))
+  }
+
+  function notificationRows() {
+    var page = Math.max(0, Math.min(notificationsPage, notificationPageCount() - 1))
+    if (page !== notificationsPage) notificationsPage = page
+    var start = page * activityPreviewCount
+    return github.notifications.slice(start, start + activityPreviewCount)
+  }
+
   function buildCursorTargets() {
     var targets = []
     function add(kind, rows) {
       for (var i = 0; i < rows.length; i++) targets.push({ key: kind + ":" + String(rows[i].id || rows[i].url || i), kind: kind, row: rows[i] })
     }
-    add("notification", sectionRows(github.notifications, notificationsExpanded))
+    add("notification", notificationRows())
     add("review", sectionRows(github.reviewRequests, reviewsExpanded))
     add("mypull", sectionRows(github.myPullRequests, myPullsExpanded))
     add("issue", sectionRows(github.assignedIssues, issuesExpanded))
@@ -456,10 +467,14 @@ Panel {
             title: "UNREAD NOTIFICATIONS"
             count: github.notifications.length
             emptyText: github.state === "ready" ? "You're all caught up." : "No notifications loaded."
-            model: root.sectionRows(github.notifications, root.notificationsExpanded)
-            expanded: root.notificationsExpanded
+            model: root.notificationRows()
+            showExpansionControl: false
+            footerButtonsBordered: true
+            page: root.notificationsPage
+            pageCount: root.notificationPageCount()
             openUrl: "https://github.com/notifications"
-            onToggleExpanded: root.notificationsExpanded = !root.notificationsExpanded
+            onPreviousPage: root.notificationsPage = Math.max(0, root.notificationsPage - 1)
+            onNextPage: root.notificationsPage = Math.min(root.notificationPageCount() - 1, root.notificationsPage + 1)
             delegateComponent: notificationDelegate
             actionText: "Mark all read"
             actionBusyText: "Marking…"
@@ -501,6 +516,7 @@ Panel {
             count: github.assignedIssues.length
             model: root.sectionRows(github.assignedIssues, root.issuesExpanded)
             expanded: root.issuesExpanded
+            footerButtonsBordered: true
             openUrl: "https://github.com/issues/assigned"
             onToggleExpanded: root.issuesExpanded = !root.issuesExpanded
             delegateComponent: issueDelegate
@@ -863,6 +879,7 @@ Panel {
       detail: modelData.repository + " · " + modelData.reason + " · " + root.relativeTime(modelData.updatedAt)
       url: modelData.url
       showReadAction: true
+      showTrailingIndicator: false
       notificationId: String(modelData.id || "")
     }
   }
@@ -967,7 +984,11 @@ Panel {
     property var model: []
     property Component delegateComponent: null
     property bool expanded: false
+    property bool showExpansionControl: true
+    property bool footerButtonsBordered: false
     property string openUrl: ""
+    property int page: 0
+    property int pageCount: 1
     // Optional destructive action. It arms on the first click and only runs on
     // the second, so a stray click cannot clear the section.
     property string actionText: ""
@@ -980,6 +1001,8 @@ Panel {
     property var actionPrepare: null
     property string preparedAction: ""
     signal toggleExpanded()
+    signal previousPage()
+    signal nextPage()
     signal actionTriggered(string prepared)
 
     function disarmAction() {
@@ -1028,10 +1051,11 @@ Panel {
       id: sectionFooter
       // Expanding is only offered once the section is truncated; below that
       // threshold the remaining controls render unbordered on their own line.
-      readonly property bool expandable: section.count > root.activityPreviewCount
+      readonly property bool expandable: section.showExpansionControl && section.count > root.activityPreviewCount
+      readonly property bool paginated: section.pageCount > 1
       readonly property bool showOpen: section.count > 0 && section.openUrl !== ""
-      readonly property bool showAction: section.count > 0 && section.actionEnabled && section.actionText !== ""
-      visible: expandable || showOpen || showAction
+      readonly property bool showAction: section.count > 0 && section.actionText !== ""
+      visible: expandable || paginated || showOpen || showAction
       anchors.horizontalCenter: parent.horizontalCenter
       spacing: Style.space(12)
       Button {
@@ -1053,9 +1077,9 @@ Panel {
         onImplicitWidthChanged: reservedWidth = Math.max(reservedWidth, implicitWidth)
         width: Math.max(reservedWidth, implicitWidth)
         visible: sectionFooter.showAction
-        enabled: !section.actionBusy
+        enabled: section.actionEnabled && !section.actionBusy
         text: section.actionBusy ? section.actionBusyText : (section.actionArmed ? section.actionConfirmText : section.actionText)
-        bordered: sectionFooter.expandable
+        bordered: sectionFooter.expandable || section.footerButtonsBordered
         foreground: section.actionArmed ? root.urgent : root.foreground
         fontFamily: root.fontFamily
         fontSize: Style.font.caption
@@ -1076,9 +1100,43 @@ Panel {
         }
       }
       Button {
+        id: previousPageButton
+        visible: sectionFooter.paginated
+        text: "󰅁"
+        tooltipText: "Previous notifications"
+        bordered: true
+        foreground: root.foreground
+        fontFamily: root.fontFamily
+        fontSize: Style.font.caption
+        verticalPadding: Style.spacing.controlPaddingY
+        enabled: section.page > 0
+        onClicked: section.previousPage()
+      }
+      Text {
+        visible: sectionFooter.paginated
+        text: (section.page + 1) + " / " + section.pageCount
+        height: previousPageButton.height
+        color: root.dim
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.caption
+        verticalAlignment: Text.AlignVCenter
+      }
+      Button {
+        visible: sectionFooter.paginated
+        text: "󰅂"
+        tooltipText: "Next notifications"
+        bordered: true
+        foreground: root.foreground
+        fontFamily: root.fontFamily
+        fontSize: Style.font.caption
+        verticalPadding: Style.spacing.controlPaddingY
+        enabled: section.page + 1 < section.pageCount
+        onClicked: section.nextPage()
+      }
+      Button {
         visible: sectionFooter.showOpen
         text: "Open in GitHub  󰅂"
-        bordered: sectionFooter.expandable
+        bordered: sectionFooter.expandable || section.footerButtonsBordered
         foreground: root.foreground
         fontFamily: root.fontFamily
         fontSize: Style.font.caption
@@ -1097,6 +1155,7 @@ Panel {
     property bool pulse: false
     property bool danger: false
     property bool showReadAction: false
+    property bool showTrailingIndicator: true
     property string notificationId: ""
     property string rowKind: ""
     property int rowIndex: 0
@@ -1117,10 +1176,10 @@ Panel {
     RowLayout {
       id: row
       anchors.left: parent.left
-      anchors.right: parent.right
+      anchors.right: readActionStrip.visible ? readActionStrip.left : parent.right
       anchors.verticalCenter: parent.verticalCenter
       anchors.leftMargin: Style.space(9)
-      anchors.rightMargin: Style.space(9)
+      anchors.rightMargin: readActionStrip.visible ? 0 : Style.space(9)
       spacing: Style.space(9)
       Text {
         text: linkRow.glyph
@@ -1157,17 +1216,49 @@ Panel {
           elide: Text.ElideRight
         }
       }
+      Text {
+        visible: linkRow.showTrailingIndicator
+        text: "󰅂"
+        color: root.dim
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.body
+      }
+    }
+    BorderSurface {
+      id: readActionStrip
+      visible: linkRow.showReadAction
+      anchors.right: parent.right
+      anchors.top: parent.top
+      anchors.bottom: parent.bottom
+      width: Style.space(32)
+      radius: 0
+      color: "transparent"
+      borderSpec: Border.none()
+
+      HoverHandler {
+        onHoveredChanged: if (hovered) root.selectKey(linkRow.cursorKey)
+      }
+
+      Rectangle {
+        anchors.left: parent.left
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        width: Style.normalBorderWidth
+        color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.16)
+      }
+
       PanelActionButton {
-        visible: linkRow.showReadAction
+        id: readAction
+        anchors.fill: parent
         enabled: github.markingNotificationId !== linkRow.notificationId
         iconText: github.markingNotificationId === linkRow.notificationId ? "󰑐" : "󰄬"
         tooltipText: "Mark this notification read (M)"
         foreground: root.foreground
+        hoverColor: Color.accent
         fontFamily: root.fontFamily
-        Layout.alignment: Qt.AlignVCenter
+        bordered: false
         onClicked: github.markNotificationRead(linkRow.notificationId)
       }
-      Text { text: "󰅂"; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.body }
     }
   }
 

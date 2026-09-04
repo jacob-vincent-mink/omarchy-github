@@ -3,8 +3,8 @@ import Omarchy.PluginPresentation 1.0
 
 Item {
     id: root
-    width: button.width
-    height: button.height
+    implicitWidth: Style.bar.statusSlot
+    implicitHeight: Style.bar.size
 
     readonly property int unreadCount: github.unreadCount
     readonly property bool readAvailable: runtime.hasPermission("bash.execute", "run")
@@ -15,25 +15,26 @@ Item {
 
     Rectangle {
         id: button
-        width: root.unreadCount > 0 ? 64 : 44
-        height: 36
-        radius: 8
-        color: root.active ? Color.alpha(Color.background, 0.86)
-          : pointer.containsMouse ? Color.alpha(Color.background, 0.72)
-          : Color.alpha(Color.background, 0.58)
-        border.color: Color.alpha(Color.foreground, pointer.containsMouse ? 0.42 : 0.2)
+        anchors.fill: parent
+        color: "transparent"
         opacity: root.readAvailable ? 1 : 0.5
 
-        Row {
+        Text {
             anchors.centerIn: parent
-            spacing: 5
-            Text {
-                text: "\uf09b"
-                color: "#eef3f8"
-                font.family: "JetBrainsMono Nerd Font"
-                font.pixelSize: 18
-            }
-            Text { visible: root.unreadCount > 0; text: root.unreadCount; color: "#eef3f8"; font.bold: true; font.pixelSize: 11 }
+            text: "\uf09b"
+            color: root.active ? Color.bar.active : Color.bar.text
+            font.family: Style.font.family
+            font.pixelSize: Style.font.icon
+        }
+
+        Rectangle {
+            visible: root.unreadCount > 0
+            width: 5
+            height: 5
+            radius: 3
+            color: Color.bar.active
+            anchors.right: parent.right
+            anchors.top: parent.top
         }
 
         MouseArea {

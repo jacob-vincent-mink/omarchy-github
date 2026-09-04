@@ -24,7 +24,12 @@ Item {
         Row {
             anchors.centerIn: parent
             spacing: 5
-            Text { text: "\uf09b"; color: "#eef3f8"; font.pixelSize: 18 }
+            Text {
+                text: "\uf09b"
+                color: "#eef3f8"
+                font.family: "JetBrainsMono Nerd Font"
+                font.pixelSize: 18
+            }
             Text { visible: root.unreadCount > 0; text: root.unreadCount; color: "#eef3f8"; font.bold: true; font.pixelSize: 11 }
         }
 

@@ -1,4 +1,5 @@
 import QtQuick
+import Omarchy.PluginPresentation 1.0
 
 Item {
     id: root
@@ -17,8 +18,10 @@ Item {
         width: root.unreadCount > 0 ? 64 : 44
         height: 36
         radius: 8
-        color: root.active ? "#243142" : (pointer.containsMouse ? "#182331" : "transparent")
-        border.color: pointer.containsMouse ? "#3b526c" : "transparent"
+        color: root.active ? Color.alpha(Color.background, 0.86)
+          : pointer.containsMouse ? Color.alpha(Color.background, 0.72)
+          : Color.alpha(Color.background, 0.58)
+        border.color: Color.alpha(Color.foreground, pointer.containsMouse ? 0.42 : 0.2)
         opacity: root.readAvailable ? 1 : 0.5
 
         Row {

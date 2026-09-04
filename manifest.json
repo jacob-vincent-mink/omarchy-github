@@ -1,23 +1,21 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "robzolkos.github",
   "name": "GitHub",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "author": "Rob Zolkos",
   "license": "MIT",
   "description": "A keyboard-friendly GitHub inbox for notifications, reviews, your own pull requests, assigned issues, Actions, and repositories.",
-  "kinds": ["bar-widget"],
-  "activation": "on-demand",
-  "entryPoints": {
-    "barWidget": "Panel.qml"
+  "runtime": {
+    "apiVersion": 1,
+    "qml": "Panel.qml",
+    "surfaceQml": {"github": "Panel.qml", "barWidget": "BarWidget.qml"}
   },
-  "barWidget": {
-    "displayName": "GitHub",
-    "description": "Act on unread notifications and browse review requests, your authored pull requests with their check state, assigned issues, active or failed workflows, and repository metrics.",
-    "category": "Development",
-    "aliases": ["github", "octocat", "repos", "actions"],
-    "allowMultiple": false,
-    "defaultSection": "right",
+  "surfaces": {
+    "github": {"role": "panel", "maximumWidth": 760, "maximumHeight": 780, "maximumFramesPerSecond": 30, "keyboardFocus": "after-gesture"},
+    "barWidget": {"role": "bar-embedded", "maximumWidth": 96, "maximumHeight": 64, "maximumFramesPerSecond": 30, "defaultSection": "right"}
+  },
+  "settings": {
     "defaults": {
       "refreshIntervalSec": 900,
       "linkBehavior": "Web app window",
@@ -49,6 +47,14 @@
       { "key": "failedActionDays", "type": "integer", "label": "Failed Actions window (days)", "min": 1, "max": 30, "step": 1, "defaultValue": 7 },
       { "key": "failedActionLimit", "type": "integer", "label": "Maximum failed Actions", "min": 1, "max": 100, "step": 5, "defaultValue": 20 },
       { "key": "iconAlwaysUnlit", "type": "boolean", "label": "Keep the bar icon unlit", "defaultValue": false, "description": "Keep the bar icon unlit regardless of unread notifications, active actions, review requests, or failing PR checks. Counts and rows still populate the panel as usual." }
+    ]
+  },
+  "permissions": {
+    "required": [
+      {"capability": "bash.execute", "definitionGeneration": 1, "definitionDigest": "dabe8499d0a7576316abac765abfcdf03a0a6bb183833fa1b30ce1f420da2150", "operations": ["run"], "profile": "github-api-v1", "reason": "Run the installed GitHub CLI with the reviewed dashboard API argument grammar"}
+    ],
+    "optional": [
+      {"capability": "external.open-uri.https", "definitionGeneration": 1, "definitionDigest": "fcbb289bdcaf8223f3c122f6d2e4a6fc7f0fd1ce0ae7cbc57e5459b852c58844", "operations": ["open"], "origins": ["https://github.com"], "userGesture": true, "reason": "Open a selected GitHub item in the user's browser"}
     ]
   }
 }

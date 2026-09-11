@@ -1,11 +1,13 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.Plugin as Plugin
 
 // GitHub dashboard data service. The helper owns API pagination and aggregation;
 // this item schedules it and exposes one stable, defensive model to the panel.
 Item {
     id: root
+    property var runtime: null
 
     property var settings: ({
     })
@@ -399,8 +401,9 @@ Item {
         onTriggered: root.notificationActionStatus = ""
     }
 
-    Process {
+    Plugin.Process {
         id: fetchProcess
+        runtime: root.runtime
 
         running: false
         command: []
@@ -439,8 +442,9 @@ Item {
 
     }
 
-    Process {
+    Plugin.Process {
         id: markProcess
+        runtime: root.runtime
 
         running: false
         command: []

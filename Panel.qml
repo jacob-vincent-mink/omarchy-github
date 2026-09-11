@@ -270,7 +270,7 @@ Panel {
   }
   onCursorTargetsChanged: ensureCursor()
 
-  Service { id: github; settings: root.settings }
+  Service { id: github; settings: root.settings; runtime: root.bar?.shell?.runtime || null }
 
   IpcHandler {
     target: root.ipcTarget

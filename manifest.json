@@ -597,7 +597,14 @@
               }
             ]
           },
-          "required": []
+          "required": [
+            "check-sign-in",
+            "read-notifications",
+            "read-review-requests",
+            "read-assigned-issues",
+            "read-authored-pull-requests",
+            "read-owned-repositories"
+          ]
         }
       },
       "settings": {

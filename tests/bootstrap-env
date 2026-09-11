@@ -1,0 +1,17 @@
+# Loaded only by the helper test's BASH_ENV, including its xargs children.
+function /bootstrap {
+  local structured=false code
+  if [[ $1 == "--json" ]]; then structured=true; shift; fi
+  [[ $1 == "--exec" && $2 == "gh" ]] || return 2
+  shift 2
+  if [[ $structured == "true" ]]; then
+    if ! command -v gh >/dev/null 2>&1; then
+      printf '%s\n' '{"version":1,"status":"unavailable"}'
+      return 1
+    fi
+    if gh "$@" >/dev/null; then code=0; else code=$?; fi
+    printf '{"version":1,"status":"completed","exitCode":%s,"stdout":"","stderr":""}\n' "$code"
+  else
+    gh "$@"
+  fi
+}

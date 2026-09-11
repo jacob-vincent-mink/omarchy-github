@@ -2,6 +2,7 @@
 set -euo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 HELPER="$ROOT/omarchy-github-fetch"
+export BASH_ENV="$ROOT/tests/bootstrap-env"
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
 assert_jq() { jq -e "$1" <<<"$2" >/dev/null || fail "$3"; }
@@ -28,7 +29,7 @@ export GH_TEST_LOG="$sandbox/gh-calls"
 ln -s "$(command -v jq)" "$sandbox/jq"
 ln -s "$(command -v bash)" "$sandbox/bash"
 out=$(PATH="$sandbox" "$HELPER")
-assert_jq '.state == "gh-not-installed" and (.reviewRequests|length) == 0' "$out" "missing-gh state"
+assert_jq '.state == "error" and (.reviewRequests|length) == 0' "$out" "unavailable host-command state"
 
 cat >"$sandbox/gh" <<'GH'
 #!/usr/bin/env bash

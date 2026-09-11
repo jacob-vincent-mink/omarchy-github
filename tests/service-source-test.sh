@@ -21,7 +21,7 @@ assert_not_contains() {
   [[ $SERVICE_SOURCE != *"$1"* ]] || fail "$2"
 }
 
-assert_contains $'function refresh() {\n        if (fetchProcess.running || markProcess.running || markQueue.length > 0) {\n            refreshQueued = true;\n            return ;\n        }' \
+assert_contains $'function refresh() {\n        if (fetchJob !== null || markJob !== null || markQueue.length > 0) {\n            refreshQueued = true;\n            return ;\n        }' \
   "refresh and notification marking are not serialized"
 assert_contains $'notifications = visibleNotifications(data.notifications);\n            notificationsRevision++;' \
   "notification refreshes do not invalidate prepared confirmations"
@@ -29,7 +29,7 @@ assert_contains $'hideNotification(value);\n        enqueueMark(value);\n       
   "single-notification marking is dropped during refresh"
 assert_contains 'notifications = [item].concat(notifications);' \
   "failed notification marking does not restore the hidden row"
-assert_not_contains $'if (value === "" || loading || fetchProcess.running || markProcess.running)' \
+assert_not_contains $'if (value === "" || loading || fetchJob !== null || markJob !== null)' \
   "single-notification marking is still blocked during refresh"
 assert_contains 'String(setting("linkBehavior", "Web app window")).toLowerCase() === "browser tab" ? "Browser tab" : "Web app window"' \
   "an unrecognised open-links value does not fall back to the web app window"
@@ -38,13 +38,13 @@ assert_contains $'function canonicalNotificationTimestamp(value) {\n        var 
   "notification boundaries are not shape validated"
 assert_contains 'return milliseconds <= Date.now() ? text : "";' \
   "future notification boundaries are accepted"
-assert_contains $'function prepareMarkAllNotificationsRead() {\n        if (notifications.length === 0 || loading || fetchProcess.running || markProcess.running)\n            return "";' \
+assert_contains $'function prepareMarkAllNotificationsRead() {\n        if (notifications.length === 0 || loading || fetchJob !== null || markJob !== null)\n            return "";' \
   "bulk confirmation can be prepared during refresh or marking"
 assert_contains $'if (!/^\\d+$/.test(id)) {\n                notificationActionStatus = "Refresh before marking everything read.";' \
   "bulk confirmation accepts invalid boundary notification IDs"
 assert_contains 'return JSON.stringify({boundary: boundary, boundaryIds: boundaryIds, revision: notificationsRevision});' \
   "bulk confirmation does not capture its boundary IDs and revision"
-assert_contains $'function markAllNotificationsRead(prepared) {\n        var confirmed = String(prepared || "");\n        if (confirmed === "" || loading || fetchProcess.running || markProcess.running)\n            return ;' \
+assert_contains $'function markAllNotificationsRead(prepared) {\n        var confirmed = String(prepared || "");\n        if (confirmed === "" || loading || fetchJob !== null || markJob !== null)\n            return ;' \
   "bulk marking is not blocked during refresh"
 assert_contains $'if (confirmed !== prepareMarkAllNotificationsRead()) {\n            notificationActionStatus = "Notifications changed. Confirm again.";' \
   "bulk marking does not verify the confirmed snapshot"
@@ -58,9 +58,9 @@ assert_contains $'function restoreHiddenNotifications(ids) {\n        var values
   "failed bulk marking does not preserve notification order"
 assert_contains $'markingAllNotifications = true;\n        markingAllNotificationIds = hideAllNotifications();\n        notificationActionStatus = "Marking all notifications read…";' \
   "bulk marking does not provide immediate visible feedback"
-assert_contains $'if (all)\n                    root.restoreHiddenNotifications(root.markingAllNotificationIds);\n                else if (markedId !== "")' \
+assert_contains $'if (all)\n                root.restoreHiddenNotifications(root.markingAllNotificationIds);\n            else if (markedId !== "")' \
   "failed bulk marking does not restore its displayed notifications"
-assert_contains $'// GitHub is authoritative after every attempt. This reconciles\n            // successful, failed, and partially completed bulk operations.\n            root.refreshQueued = false;\n            Qt.callLater(root.refresh);' \
+assert_contains $'// GitHub is authoritative after every attempt. This reconciles\n        // successful, failed, and partially completed bulk operations.\n        root.refreshQueued = false;\n        Qt.callLater(root.refresh);' \
   "notification marking does not reconcile every result with an authoritative refresh"
 assert_not_contains 'root.notifications = root.notifications.filter' \
   "notification marking still hides rows using stale local data"

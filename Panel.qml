@@ -8,6 +8,7 @@ import qs.Ui
 
 Panel {
   id: root
+  required property var runtime
   moduleName: "robzolkos.github"
   ipcTarget: "robzolkos.github"
   manageIpc: false
@@ -179,8 +180,7 @@ Panel {
     if (value === "") return
     // omarchy-launch-webapp gives GitHub its own window; omarchy-launch-browser
     // hands the URL to the default browser for those without a Chromium-based one.
-    if (github.linkBehavior === "Browser tab") Quickshell.execDetached(["omarchy-launch-browser", value])
-    else Quickshell.execDetached(["omarchy-launch-webapp", value])
+    runtime.openUrl(value, {mode: github.linkBehavior === "Browser tab" ? "browser" : "webapp"})
     close()
   }
 
@@ -270,7 +270,7 @@ Panel {
   }
   onCursorTargetsChanged: ensureCursor()
 
-  Service { id: github; settings: root.settings }
+  Service { id: github; settings: root.settings; runtime: root.runtime }
 
   IpcHandler {
     target: root.ipcTarget

@@ -10,19 +10,21 @@ Six command leaves are required for the core inbox: `check-sign-in`, `read-notif
 
 Organization repositories, active Actions and completed Actions are optional read leaves. Organization scope is opt-in and Actions scanning has an explicit Off mode; both extend the working personal inbox. Actions scanning defaults to Recent repositories, so decline of an Actions leaf can produce partial-result warnings until scanning is turned off. Notification mutations (`mark-thread-read`, `mark-notifications-before`) and opening links are optional; decline keeps the dashboard read-only or prevents browser handoff. All fourteen own-setting reads and fourteen writes remain optional and independently selected: missing reads use built-in defaults, and missing writes prevent saving changes. The settings keys are not system configuration or GitHub token scopes.
 
-The service uses Omarchy's portable `qs.Plugin.Process`, with its runtime passed from `bar.shell.runtime`. Omarchy supplies the declared `gh` command adapter in both modes; the original helper again calls `gh` directly, including its parallel Actions jobs. Ward checks selected command leaves; explicit YOLO uses the declared host executable without enforcing those leaves. No plugin-specific mode branch, grants parser, replacement API client or Rust provider remains. The original queries, pagination, aggregation, filters and notification-boundary logic remain unchanged.
+The bar entry declares `required property var runtime` and passes the initialized runtime to its nested service. The service starts the bundled helper with `runtime.runLocal()` and receives a structured completion result. The helper stays inside the worker and calls `/bootstrap --exec gh ...` directly, including its parallel Actions jobs. Its structured sign-in check distinguishes permission denial from a logged-out account. No plugin-specific mode branch, PATH shim, grants parser, replacement API client or Rust provider remains. The original queries, pagination, aggregation, filters and notification-boundary logic remain unchanged.
 
 ## Portable runtime
 
-The same manifest, QML and helper can now be installed in Ward or explicit `--yolo` mode using the matching Omarchy portable runtime. YOLO is arbitrary same-account code, not an equivalent permission boundary. The host-owned installation record chooses mode; changing a manifest or losing the native executable cannot turn an existing Ward installation into YOLO.
+The same manifest, QML and helper can be installed with normal permission selection or explicit `--yolo` mode using the matching Omarchy runtime. Both run in Ward and use the same broker. For this sandbox-native plugin, YOLO approves every declared supported permission and command leaf; it does not admit undeclared commands or bypass argument constraints. Only legacy plugins without a sandbox declaration retain the explicitly trusted in-process YOLO path. Host-owned installation provenance selects the execution class; updates cannot silently change it.
 
-Relative to the original `main` revision, production-code churn falls from 31 changed lines in the previous Ward-only port to 12 (additions plus deletions, excluding manifest, documentation and tests). The helper differs from the original only in its Bash shebang; QML adds the shared process type and runtime injection.
+The matching host changes are still unpublished. This branch therefore requires the current local required-runtime implementation in addition to the linked Omarchy PR; the previously published host revision does not provide this API.
 
-A fresh external private-display trial installed, enabled and opened the actual revision in each mode with disposable homes and no GitHub credentials. Both rendered the original sign-in guidance. This is current startup and logged-out evidence, not a rerun of the historical account/API interaction matrix below. Real-account actions and final live acceptance remain unverified for this portable revision.
+A fresh external private-display trial installed, enabled and opened the actual revision in each mode with disposable homes and no GitHub credentials. Both rendered the original sign-in guidance. A subsequent live rehearsal populated the real account's inbox, authored pull requests and active Actions through read-only grants. The default Actions scan was slow. The live settings panel read the saved icon preference and persisted a change back to off. No notification-write grants were selected and no inbox state was changed. These checks do not rerun the historical interaction matrix below or establish full feature parity.
 
 The manifest requests access; user selection approves an exact revision, executable digest and command leaves. The worker has neither real credentials nor direct network access. Approved host-side `gh` jobs use the user's normal CLI authentication and network access. Exec is delegated host authority: argument matching does not sandbox the CLI's application semantics, dependencies, configuration or delegated effects. A future CLI byte change requires reapproval.
 
-## Evidence
+## Historical evidence
+
+The following trials used earlier port/runtime revisions. Present-tense descriptions in this section record their results, not fresh verification of the required-runtime API above.
 
 The trials below predate the new required-leaf list. Their declined-sign-in cases verify denial handling in that earlier revision, not successful activation with missing required permissions in this revision. Current source checks do not replace a fresh admission and desktop trial.
 
@@ -46,4 +48,4 @@ The original `r` key, middle/right bar clicks and left-click reopening also pass
 
 ## Remaining work
 
-Deploy the latest runtime fixes when activation is authorized, resolve and retest live Actions timeouts, verify actual destinations in both browser modes, and complete the authorized desktop acceptance. Experiments and fake account fixtures are intentionally not committed. This draft demonstrates the permission model and source delta; it is not a feature-parity or release-security claim.
+Publish the matching host runtime, investigate the slow default Actions scan, verify actual destinations in both browser modes, and rerun the remaining desktop interaction matrix against this API revision. Experiments and fake account fixtures are intentionally not committed. This draft demonstrates the permission model and source delta; it is not a feature-parity or release-security claim.
